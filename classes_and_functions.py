@@ -3,11 +3,21 @@ vowels = ['a','e','i','o','u']
 npcs = {}
 places = {}
 things = {}
+room_is_inside = []
+
 
 # functions
 
 def add_name_pair(dict, object):
     dict[object.name] = object
+
+def lookup(dict, name):
+    return dict.get(name)
+
+def new_inst(room, location):
+    exec ("obj{} = room()")
+
+
 
 # making sure routes between places should be reciprocal
 def add_route(place1, place2, type, locked=0):
@@ -21,45 +31,18 @@ def add_route(place1, place2, type, locked=0):
         case 'ud':
             place1.routes['d'] = ['below you is', place2.name, place2]
             place2.routes['u'] = ['above you is', place1.name, place1]
-        case 'oi':
-            place1.routes['i'] = ['you can enter', place2.name, place2]
-            place2.routes['o'] = ['you can exit to', place1.name, place1]
         case _:
             pass
             # raise error
 
-# a thing can be abstract or physical
-# when abstract, it is more akin to a topic
-# you can ASK npcs (ABOUT) things
-# you can TAKE and DROP portable items, as well as BUY and SELL most of them
-# you can EQUIP and UNEQUIP equipable things
-# you can EAT, DRINK, USE or CONSUME consumable things
-# unique objects are quest objects or similar, of which the player should only ever have one at most
 
-class thing:
-    def __init__(self, name, desc, portable=0, equipable=0, consumable=0, pl=0, unique=0):
+# base class
+class base:
+    def __init__(self, name, desc=0):
         self.name = name
         self.desc = desc
-        self.portable = portable
-        self.equipable = equipable
-        self.consumable = consumable
 
-        if pl == 0:
-            self.pl = f'{name}s'
-        else:
-            self.pl = pl
-        
-        if name[0] in vowels:
-            self.indef = f'an {name}'
-        else:
-            self.indef = f'a {name}'
 
-        if unique:
-            self.article = f'the {name}'
-        else:
-            self.article = self.indef
-
-        add_name_pair(things, self)
 
 
 # this is you, the player
@@ -73,34 +56,82 @@ class player:
         self.equiped = {}
         self.desc = f'you are carrying {self.inv}. you have {self.equiped} equiped.'
 
+
+# a thing can be abstract or physical
+# when abstract, it is more akin to a topic
+# you can ASK npcs (ABOUT) things
+# you can TAKE and DROP portable items, as well as BUY and SELL most of them
+# you can EQUIP and UNEQUIP equipable things
+# you can EAT, DRINK, USE or CONSUME consumable things
+# unique objects are quest objects or similar, of which the player should only ever have one at most
+
+class thing(base):
+    def __init__(self, name, desc, pl=0, unique=0):
+        super().__init__(name, desc)
+
+        if pl == 0:
+            self.pl = f'{name}s'
+        else:
+            self.pl = pl
+
+        if name[0] in vowels:
+            self.indef = f'an {name}'
+        else:
+            self.indef = f'a {name}'
+        if unique:
+            self.article = f'the {name}'
+        else:
+            self.article = self.indef
+
+        add_name_pair(things, self)
+
+
 # you can TALK (TO/WITH) npcs (ABOUT) things
 # sometimes you can BUY things (FROM) or SELL things (TO) npcs
 
-class npc:
+class npc(base):
     def __init__(self, name, desc=0):
-        self.name = name
-        self.desc = desc
-        self.inv = {}
+        super().__init__(name, desc)
         add_name_pair(npcs, self)
 
-# places are just that, places the player can visit
+class person():
+    def __init__(self, name, desc=0):
+        super().__init__(name, desc)
+        self.inv = {}
+
+class mob():
+    def __init__(self, name, desc=0, unique=0):
+        super().__init__(name, desc)
+
+# locations are just that, places the player can visit
 # upon entry, descriptive text will appear
 # some extra description should be added to appear depending on variables such as quest progress, and number of visits
 
-class place:
-    def __init__(self, name, desc):
-        self.name = name
-        self.desc = desc
+class location(base):
+    def __init__(self, name, desc, unique=0):
+        super().__init__(name, desc)
+        self.unique = unique
         self.visited = 0
-        self.rooms = {}
+        self.people = {}
+        self.mobs = {}
         self.inv = {}
+        self.rooms = {}
         self.routes = {}
-        self.exits = []
+
+        if name[0] in vowels:
+            self.indef = f'an {name}'
+        else:
+            self.indef = f'a {name}'
+        if unique:
+            self.article = f'the {name}'
+        else:
+            self.article = self.indef
+        
         add_name_pair(places, self)
 
     def visit(self):
         p.location = self
-        print(f'\033[1m--- {self} ---\033[0m')
+        print(f'\033[1m--- {self.name} ---\033[0m')
         print(self.desc, end='.\n')
 
         if self.rooms:
@@ -108,7 +139,7 @@ class place:
             for item in self.rooms:
                 print(f"{self.rooms[item].article}", sep=', ', end='. ')
         if self.inv:                
-            print("on the ground you see", end=' ')
+            print("you see", end=' ')
             for item in self.inv:
                 print(f"{self.inv[item].article}", sep=', ', end='.\n')
 
@@ -122,10 +153,11 @@ class place:
 
         self.visited += 1
 
+# places are normal locations
 
-
-    def __str__(self):
-        return f'{self.name}'
+class place(location):
+    def __init__(self, name, desc, unique=0):
+        super().__init__(name, desc, unique)
 
 # rooms are "smaller" locations inside a place, and appear as objects
 # you can ENTER and EXIT most rooms, although this might require centain skills
@@ -134,21 +166,12 @@ class place:
 # you can OPEN and CLOSE some rooms, in which case the room is likely a type of container
 # for now, rooms are considered to be both places and things
 
-class room:
-    def __init__(self, name, desc=0, enterable=0, openable=0, lockable=0):
-        self.name = name
-        self.desc = desc
-        self.enterable = enterable
-        self.openable = openable
-        self.lockable = lockable
-        add_name_pair(places, self)
+class room(location):
+    def __init__(self, name, desc=0):
+        super().__init__(name, desc)
         add_name_pair(things, self)
 
-        
-        if name[0] in vowels:
-            self.article = f'an {name}'
-        else:
-            self.article = f'a {name}'
+
         
     def __str__(self):
         return f'{self.name}'
@@ -157,8 +180,8 @@ class room:
 
 # instances
 
-apple = thing("apple", "bright red and crunchy", 1, 0, 1)
-knife = thing("knife", "not too sharp", 1, 1)
+apple = thing("apple", "bright red and crunchy")
+knife = thing("knife", "not too sharp")
 
 alley = place("alley",
     "you are in an alley")
@@ -214,30 +237,57 @@ def look(direct):
         object = p.location.inv.get(direct) 
         print(object.desc)
     else:
-        print(f"you don't see anything unusual about the {direct}")
+        print(f"you don't see that here.")
+
+
+
 
 def go(direct):
-    if direct in p.location.exits:
-        p.location.routes[direct][2].visit()
-    elif direct in p.location.neighbours:
-        places.get(direct).visit()
+    global room_is_inside
+    if direct != []:
+        if direct in p.location.rooms.keys(): 
+            room_is_inside.append(p.location)
+            lookup(p.location.rooms, direct).visit()
+        elif direct in p.location.neighbours:
+            room_is_inside = []
+            places.get(direct).visit()
+        elif direct in p.location.exits:
+            room_is_inside = []
+            p.location.routes[direct][2].visit()
+        elif room_is_inside:
+            if room_is_inside[-1] == places.get(direct):
+                exit()
+            else:
+                print(f'try exiting the {p.location} first.')
+        else:
+            print(direct)
+            print("you can't go that way.")
     else:
-        print("you can't go that way")
+        print("where would you like to go?")
+
+def exit():
+    global room_is_inside
+    if room_is_inside: 
+        room_is_inside[-1].visit()
+        room_is_inside.pop()
+    else:
+        print(f'you are not inside anything.')
+
 
 def take(direct):
     if direct in p.location.inv.keys():
         object = p.location.inv.get(direct) 
         add_name_pair(p.inv, object)
-        print(f'you took {direct} successfully')
+        print(f'you took {direct} successfully.')
     else:
-        print("you can't take that from here")
+        print("you can't take that from here.")
 
 def drop(direct):
     if direct in p.inv.keys():
         del p.inv[direct]
-        print(f'you dropped {direct} successfully')
+        print(f'you dropped the {direct} successfully.')
     else:
-        print("you aren't carrying that")
+        print("you aren't carrying that.")
 
 
 

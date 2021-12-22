@@ -5,12 +5,11 @@ synonyms = {
 's': ['s', 'south', 'southward'],
 'e': ['e', 'east', 'eastward'],
 'w': ['w', 'west', 'westward'],
-'in': ['in', 'enter', 'into', 'get in'],
-'out': ['out', 'exit', 'leave', 'outta', 'get out'],
 'up': ['up', 'ascend', 'get up'],
 'down': ['down', 'descend', 'get down'],
 # verbs
-'go': ['go', 'walk', 'travel', 'move', 'wander', 'leave', 'set off', 'voyage', 'explore', 'stroll', 'get to'],
+'go': ['go', 'walk', 'travel', 'move', 'wander', 'set off', 'voyage', 'explore', 'stroll', 'get to', 'enter', 'into'],
+'exit': ['exit', 'leave', 'outta', 'get out'],
 'look': ['x', 'look', 'examine', 'check', 'inspect'],
 'consume': ['eat', 'drink', 'consume', 'munch', 'monch', 'chow down', 'slurp'],
 'talk': ['talk', 'chat', 'speak', 'ask', 'address', 'inquire', 'tell', 'notify', 'say', 'explain', 'describe', 'shout', 'yell', 'scream'],
@@ -33,11 +32,11 @@ yeses = ['y', 'yes', 'ye', 'yep', 'yea', 'okay', 'ok', 'affirmative', 'confirm']
 nos = ['no', 'nah', 'nope', 'nay', 'nae', 'negative']
 
 directions = []
-for term in ({k: synonyms[k] for k in list(synonyms)[:8]}):
+for term in ({k: synonyms[k] for k in list(synonyms)[:6]}):
     for word in synonyms[term]:
         directions.append(word)
 
 verbs = []
-for term in ({k: synonyms[k] for k in list(synonyms)[8:]}):
+for term in ({k: synonyms[k] for k in list(synonyms)[6:]}):
     for word in synonyms[term]:
         verbs.append(word)

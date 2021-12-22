@@ -1,8 +1,7 @@
 from classes_and_functions import *
 from synonyms import * 
 
-test_game = False
-
+test_game = True
 
 print(welcome_message)
 p.location.visit()
@@ -10,6 +9,7 @@ p.location.visit()
 def play():
     while True:
         # get input including up to three word phrases
+        print(places)
         input_single = input().lower().split(' ')
         input_double = []
         input_triple = []
@@ -43,13 +43,13 @@ def play():
         for word in inputs:
             if word in verbs:
                 input_verbs.append(word)
-            elif word in things:
+            if word in things:
                 input_things.append(word)
-            elif word in places:
+            if word in places:
                 input_places.append(word)
-            elif word in npcs:
+            if word in npcs:
                 input_npcs.append(word)
-            elif word in directions:
+            if word in directions:
                 input_directions.append(word)
 
         # continue to categorize
@@ -72,28 +72,34 @@ def play():
                 direct = input_places[0]
         elif input_directions != []:
             direction = input_directions[0]
+            if input_places != []:
+                direct = input_places[0]
         else:
             print('you must include an action.')
 
         # connect input to function
-        if verb == 'take':
-            take(direct)
 
-        elif verb == 'drop':
-            drop(direct)
 
-        elif verb == 'inventory':
+        if verb == 'inventory':
             inventory()
         
         elif verb == 'look':
             look(direct)
         
         elif verb == 'go':
-            if direction:
-                go(direction)
-            else:
+            if direct:
                 go(direct)
+            else:
+                go(direction)
 
+        elif verb == 'exit': 
+            exit()
+
+        elif verb == 'take':
+            take(direct)
+
+        elif verb == 'drop':
+            drop(direct)
         # less common / semantically abiguous terms should be toward the bottom of this list
     
         elif verb == 'rest':
@@ -104,7 +110,7 @@ def play():
             confirm = input().lower().split()
             for word in confirm:
                 if word in yeses:
-                    print('goodbye, adventurer')
+                    print('goodbye, adventurer!')
                     quit()
                 elif word in nos:
                     pass
@@ -114,7 +120,10 @@ def play():
         # only exception to verb needed rule
 
         elif direction:
-            go(direction)
+            if direct:
+                go(direct)
+            else:
+                go(direction)
         
         else:
             pass # this should not be possible – raise error
@@ -128,5 +137,6 @@ def play():
             print(f'direct: {direct}')
             print(f'indirect: {indirect}')
             print(f'direction: {direction}')
+            print(f'inside: {room_is_inside}')
 
 play()
